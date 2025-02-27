@@ -1,0 +1,71 @@
+---
+title: "HW 2 Time Series"
+output: html_document
+date: "2025-02-20"
+---
+
+```{r}
+library(fpp)
+library(fpp2)
+Netflix_Subscribers <- read.csv("C:/Users/cgroo/OneDrive/Desktop/Netflix_Customer _Subscription-Time Series.csv", header=TRUE)
+
+names(Netflix_Subscribers)[1] <- "Date"
+
+Netflix_Subscriber_Ts <- ts(Netflix_Subscribers$Subscribers, start = c(2013, 2), frequency = 4)
+
+plot(Netflix_Subscriber_Ts)
+#The time series I chose was the amount of Netflix Subscribers each quarter. The data starts in 2013 during quarter 2 with 34,240,000 subscribers. The last recorded amount in the time series is quarter 1 of 2013 with 247,150,000 subscribers. 
+
+Acf(Netflix_Subscriber_Ts)
+# The Acf on the Netflix Subscriber Time Series shows a high amount of trend in the data. There are no recurring spikes shown in the chart meaning that seasonality is absent or weak. The first few lags show similar autocorrelation meaning that the value of subscribers is highly reliant on the most recent periods. The lags enter the statistically significant area of the chart at lag 11. This means the first 10 lags are show that they affect the current period, with short term dependence very high and long term dependence much lower. 
+
+stl_decomp <- stl(Netflix_Subscriber_Ts, s.window = "periodic")
+plot(stl_decomp)
+#The decomposition chart on the Netflix Subscriber Time Series helps show many key inferences about trend, seasonality and noise. The time series has a strong positive trend which is extremely consistent and steady. This composition chart shows that there is seasonality which is in direct contradiction with the Acf. The seasonality looks to be pretty steady with peaks around the end of each year. The remainder portion shows large noise and spikes during the years of 2020 to 2022. This can most likely be explained by the COVID pandemic where there was much more time to stream shows. 
+
+
+#seasonal Naive
+snaive_forecast <- snaive(Netflix_Subscriber_Ts,5)
+plot(snaive_forecast)
+
+#This Seasonal Naive model has a high influence of seasonality. The corresponding value from the same period in the previous cycle has an extremely high impact. For the Netflix Subscriber Time Series this model does not work well as the data has a high amount of trend and less seasonality.
+
+#Moving Average
+MA5 <- ma(Netflix_Subscriber_Ts,order=5)
+MA5_forecast <- forecast(MA5, h=5)
+plot(MA5_forecast)
+
+#This moving average model takes the average of the previous 5 quarters of Netflix Subscribers. This allows for major impact of trend and makes the most recent recordings very impact.This is a great model for this time series as the lags 1-5 have very high autocorrelation.
+
+#HoltWinters
+HW_model <- HoltWinters(Netflix_Subscriber_Ts)
+HW_forecast <- forecast(HW_model, h=5)
+plot(HW_forecast)
+
+#This HoltWinters model is an exponential smoothing model which takes both trend and seasonality in to affect. This model works well with this data as both the Acf and decomposition models show a large amount of trend as well as some seasonality.
+
+#ETS
+ets_model <- ets(Netflix_Subscriber_Ts)
+forecast_ets_1 <- forecast(ets_model, h=5)
+plot(forecast_ets_1)
+
+#This decomposition model uses the breakdown of error, trend, and seasonality. This model works well with this time series as the amount of Netflix Subscribers has trend, seasonality and noise. Normally the forecast using the decompostiotn is not great because it assumes that the trend and seasonality don't fluctatuate to much, however in the case of Netflix Subscribers it seems to be steady so it works well. 
+
+
+#Plot with all lines
+plot(Netflix_Subscriber_Ts)
+ lines(ets_model$fitted, col = "green")
+ lines(MA5_forecast$fitted, col = "red")
+ lines(snaive_forecast$fitted, col = "blue")
+
+#Accuracy
+ accuracy(forecast_ets_1)
+ accuracy(HW_forecast)
+ accuracy(snaive_forecast)
+ accuracy(MA5_forecast)
+
+# The Accuracy measure that I chose for these models is Mean Average Percent Error (MAPE). The best model in this case was the Decomposition Moving Average Model(MA5). The MAPE is .672% which means that on average, the Moving Average model’s predictions are off by .627% of the actual values. The ETS decomposition(Ets_model) model was the second best with having a MAPE of 1.72%. The worst model that I created is the seasonal naive model which has a MAPE of 17.03%. 
+
+
+```
+
